@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>★ 별관 부담임 체크리스트</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+  :root {
+    --bg:#F7F6F2;--card:#FFFFFF;--border:#E4E2DB;--text:#1A1916;--muted:#888780;--hint:#B4B2A9;
+    --green-bg:#E1F5EE;--green-border:#0F6E56;--green-text:#085041;
+    --amber-bg:#FAEEDA;--amber-border:#854F0B;--amber-text:#633806;
+    --gray-bg:#F1EFE8;--gray-border:#5F5E5A;--gray-text:#444441;
+    --red-bg:#FCEBEB;--red-border:#A32D2D;--red-text:#791F1F;
+    --accent:#1D9E75;--radius:10px;--radius-sm:7px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+  .top-bar{background:var(--text);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:100}
+  .top-title{font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+  .week-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .week-label{font-size:12px;color:rgba(255,255,255,0.55);flex:1}
+  .week-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:5px;padding:3px 8px;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer}
+  .week-btn:active{background:rgba(255,255,255,0.22)}
+  .progress-wrap{margin-top:10px;display:flex;align-items:center;gap:10px}
+  .progress-bar{flex:1;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s ease}
+  .progress-label{font-size:11px;color:rgba(255,255,255,0.55);white-space:nowrap}
+  .legend-row{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+  .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,0.6)}
+  .leg-dot{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+  .body{padding:14px 12px 0}
+  .section-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;padding:14px 4px 6px}
+  .days-row{display:grid;grid-template-columns:1fr repeat(5,38px);gap:3px;padding:0 4px 6px}
+  .day-hd{font-size:11px;font-weight:500;color:var(--muted);text-align:center}
+  .item-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;overflow:hidden}
+  .item-main{display:grid;grid-template-columns:1fr repeat(5,38px);gap:3px;align-items:center;padding:10px 8px}
+  .item-text{display:flex;gap:5px;align-items:flex-start;padding-right:4px}
+  .item-no{font-size:10px;color:var(--hint);min-width:14px;margin-top:2px;flex-shrink:0}
+  .item-desc{font-size:12px;line-height:1.5;color:var(--text)}
+  .cell{display:flex;align-items:center;justify-content:center}
+  .chk-btn{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:transform .1s;color:var(--hint)}
+  .chk-btn:active{transform:scale(.88)}
+  .chk-btn.o{background:var(--green-bg);border-color:var(--green-border);color:var(--green-text)}
+  .chk-btn.t{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber-text)}
+  .chk-btn.d{background:var(--gray-bg);border-color:var(--gray-border);color:var(--gray-text)}
+  .chk-btn.x{background:var(--red-bg);border-color:var(--red-border);color:var(--red-text)}
+  .picker-wrap{display:none;padding:0 8px 10px;border-top:1px solid var(--border);background:#FAFAF8}
+  .picker-wrap.open{display:block}
+  .picker-label{font-size:10px;color:var(--hint);padding:8px 0 6px}
+  .picker-btns{display:flex;gap:6px}
+  .pick-opt{flex:1;height:38px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+  .pick-opt:active{transform:scale(.9)}
+  .pick-opt.po{background:var(--green-bg);border-color:var(--green-border);color:var(--green-text)}
+  .pick-opt.pt{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber-text)}
+  .pick-opt.pd{background:var(--gray-bg);border-color:var(--gray-border);color:var(--gray-text)}
+  .pick-opt.px{background:var(--red-bg);border-color:var(--red-border);color:var(--red-text)}
+  .pick-opt.pn{font-size:12px;color:var(--muted)}
+  .note-row{display:flex;align-items:center;gap:6px;padding:0 8px 8px}
+  .note-label{font-size:10px;color:var(--hint);min-width:24px}
+  .note-input{flex:1;font-size:12px;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;background:var(--card);color:var(--text);outline:none}
+  .note-input:focus{border-color:var(--accent)}
+  .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;gap:8px;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .bottom-btn{flex:1;height:44px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+  .bottom-btn:active{background:var(--border)}
+  .bottom-btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+  .bottom-btn.primary:active{background:#333}
+  .spacer{height:70px}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="top-title">★ 별관 부담임 체크리스트</div>
+  <div class="week-row">
+    <div class="week-label" id="weekLabel"></div>
+    <button class="week-btn" onclick="changeWeek(-1)">◀ 이전주</button>
+    <button class="week-btn" onclick="changeWeek(1)">다음주 ▶</button>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    <div class="progress-label" id="pLabel">○ 0 / 0</div>
+  </div>
+  <div class="legend-row">
+    <div class="leg"><div class="leg-dot" style="background:#E1F5EE;color:#085041">○</div>완료</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAEEDA;color:#633806">△</div>미흡</div>
+    <div class="leg"><div class="leg-dot" style="background:#F1EFE8;color:#444441">—</div>해당없음</div>
+    <div class="leg"><div class="leg-dot" style="background:#FCEBEB;color:#791F1F">✕</div>누락</div>
+  </div>
+</div>
+<div class="body">
+  <div class="days-row" style="padding-top:10px">
+    <div class="day-hd" style="text-align:left">항목</div>
+    <div class="day-hd">수</div><div class="day-hd">목</div><div class="day-hd">금</div>
+    <div class="day-hd">토</div><div class="day-hd">일</div>
+  </div>
+  <div id="list"></div>
+  <div class="spacer"></div>
+</div>
+<div class="bottom-bar">
+  <button class="bottom-btn" onclick="resetAll()">↺ 초기화</button>
+  <button class="bottom-btn primary" onclick="exportXLSX()">↓ 엑셀 저장</button>
+</div>
+
+<script>
+const DAYS=['수','목','금','토','일'];
+const SYM=[null,'O','△','—','X'];
+const DISP=[null,'○','△','—','✕'];
+const BCLS=[null,'o','t','d','x'];
+
+const SECTIONS=[
+  {label:'출석 전',items:[
+    {no:1,text:'강의실 배치표 확인+출력, 직원 톡방 업무 전달사항 숙지'},
+    {no:2,text:'강의실 세팅 (프린트 정리, 교재·분필·칠판지우개·히터/에어컨·공기청정기, 카메라)'},
+    {no:3,text:'비품 채우기 (화장실, 정수기 컵, 분필, 건전지 등) / 부족분 구매 요청'},
+  ]},
+  {label:'출석',items:[
+    {no:4,text:'출석 시 인사, 태블릿 출결, 핸드폰 제출, 강의실 안내 / 인원 최종 확인'},
+    {no:5,text:'단톡방 내용 출석부 적용 (누락 1건:△, 2건↑:X)'},
+    {no:6,text:'미등원 학생 전화 (학생→학부모), 지각/결석 사유 확인·단톡 공유'},
+    {no:7,text:'구글 출석부 기입 (출석타임, 지각시간·사유, 보강, 간출 제작)'},
+    {no:8,text:'출석+크롬 출석부 최종 확인 후 단톡 공유 (늦어도 20~30분 내)'},
+  ]},
+  {label:'출석 후',items:[
+    {no:9,text:'주차과제집 과제 검사 후 점수 출석부 기입'},
+    {no:10,text:'어휘(형설지공) 채점 후 점수 출석부 기입'},
+    {no:11,text:'주차과제집 + 어휘 성적 문자 전송'},
+    {no:12,text:'모의고사 클리닉 성적 처리 (맥가이 후 점수 기입 / 일요일 저녁 일괄 문자)'},
+  ]},
+  {label:'쉬는 시간',items:[
+    {no:13,text:'각 강의실 칠판 지우기'},
+    {no:14,text:'신규생 사진 촬영 (마스크 벗고)'},
+    {no:15,text:'기타 직원 요청 처리 (교재 배부, 결제 안내, 성적표 확인 등)'},
+    {no:16,text:'강의실 카메라 촬영 상태 확인'},
+  ]},
+  {label:'수업 종료 후',items:[
+    {no:17,text:'강의실 정리 (책상 줄맞춤, 쓰레기, 프린트 수거, 마지막 수업 시 소등)'},
+    {no:18,text:'강의실·핸드폰 가방 내 분실물 확인'},
+    {no:19,text:'촬영 영상 확인 및 디자인팀 칩 전달 / 직원 공유'},
+  ]},
+  {label:'퇴근 전',items:[
+    {no:20,text:'다음 날 부담임·직원에게 전달사항 단톡 공유'},
+    {no:21,text:'데스크 정리 (데스크 위, 앞 책상, 본인 자리)'},
+    {no:22,text:'비품 채우기'},
+    {no:23,text:'(주말) 다음 날 강의실 세팅 미리 준비'},
+  ]},
+  {label:'기타',items:[
+    {no:24,text:'특이·변동·완료 사항 즉시 직원 전달'},
+    {no:25,text:'(금요일) 모클 성적 문자·과제 안내 문자 세팅'},
+    {no:26,text:'(일요일) 과제 단톡 확인 → 문자 양식 공유·과제 시트 반영'},
+    {no:27,text:'(일요일) 정규·형설 교재 프린트 / 추가 프린트물 확인 후 세팅'},
+    {no:28,text:'(일요일) 배부 교재·자료 세팅 후 상담실 전달'},
+    {no:29,text:'(일요일) 출석 종료 후 교재 재고 확인·공유'},
+  ]},
+];
+
+const state={}, notes={};
+let openPicker=null;
+let weekOffset=0;
+const TOTAL_CELLS=SECTIONS.reduce((a,s)=>a+s.items.length,0)*5;
+SECTIONS.forEach(s=>s.items.forEach(i=>{state[i.no]=[0,0,0,0,0];notes[i.no]=''}));
+
+function getWedSun(offset){
+  const now=new Date(), day=now.getDay();
+  const wed=new Date(now);
+  wed.setDate(now.getDate()-((day+4)%7)+offset*7);
+  const sun=new Date(wed); sun.setDate(wed.getDate()+4);
+  return {wed,sun};
+}
+
+function getWeekLabel(){
+  const {wed,sun}=getWedSun(weekOffset);
+  const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  const dn=['일','월','화','수','목','금','토'];
+  return `업무 진행 주간: ${fmt(wed)}(${dn[wed.getDay()]})~${fmt(sun)}(${dn[sun.getDay()]})`;
+}
+
+function changeWeek(dir){
+  weekOffset+=dir;
+  document.getElementById('weekLabel').textContent=getWeekLabel();
+}
+
+function togglePicker(no,di){
+  const key=`${no}-${di}`;
+  if(openPicker){
+    document.getElementById('pk-'+openPicker).classList.remove('open');
+    if(openPicker===key){openPicker=null;return;}
+  }
+  document.getElementById('pk-'+key).classList.add('open');
+  openPicker=key;
+  setTimeout(()=>document.getElementById('pk-'+key).scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function pick(no,di,val){
+  state[no][di]=val;
+  const btn=document.getElementById(`b-${no}-${di}`);
+  btn.className='chk-btn'+(val?' '+BCLS[val]:'');
+  btn.textContent=val?DISP[val]:'·';
+  document.getElementById('pk-'+no+'-'+di).classList.remove('open');
+  openPicker=null;
+  updateProgress();
+}
+
+function updateProgress(){
+  let done=0;
+  SECTIONS.forEach(s=>s.items.forEach(i=>state[i.no].forEach(v=>{if(v===1)done++;})));
+  const pct=Math.round(done/TOTAL_CELLS*100);
+  document.getElementById('pFill').style.width=pct+'%';
+  document.getElementById('pLabel').textContent=`○ ${done} / ${TOTAL_CELLS}`;
+}
+
+function render(){
+  let html='';
+  SECTIONS.forEach(sec=>{
+    html+=`<div class="section-label">${sec.label}</div>`;
+    sec.items.forEach(item=>{
+      const no=item.no;
+      html+=`<div class="item-card">
+        <div class="item-main">
+          <div class="item-text"><span class="item-no">${no}</span><span class="item-desc">${item.text}</span></div>
+          ${DAYS.map((_,di)=>{const v=state[no][di];return`<div class="cell"><button class="chk-btn${v?' '+BCLS[v]:''}" id="b-${no}-${di}" onclick="togglePicker(${no},${di})">${v?DISP[v]:'·'}</button></div>`;}).join('')}
+        </div>
+        ${DAYS.map((_,di)=>`<div class="picker-wrap" id="pk-${no}-${di}"><div class="picker-label">${DAYS[di]}요일 선택</div><div class="picker-btns"><button class="pick-opt po" onclick="pick(${no},${di},1)">○</button><button class="pick-opt pt" onclick="pick(${no},${di},2)">△</button><button class="pick-opt pd" onclick="pick(${no},${di},3)">—</button><button class="pick-opt px" onclick="pick(${no},${di},4)">✕</button><button class="pick-opt pn" onclick="pick(${no},${di},0)">지우기</button></div></div>`).join('')}
+        <div class="note-row"><span class="note-label">비고</span><input class="note-input" placeholder="△, ✕ 사유 입력..." value="${notes[no]||''}" oninput="notes[${no}]=this.value"/></div>
+      </div>`;
+    });
+  });
+  document.getElementById('list').innerHTML=html;
+}
+
+function resetAll(){
+  if(!confirm('이번 주 체크 내용을 모두 초기화할까요?'))return;
+  SECTIONS.forEach(s=>s.items.forEach(i=>{state[i.no]=[0,0,0,0,0];notes[i.no]=''}));
+  openPicker=null; render(); updateProgress();
+}
+
+function exportXLSX(){
+  const wb=XLSX.utils.book_new();
+  const weekText=getWeekLabel();
+
+  const headerStyle={font:{bold:true},fill:{fgColor:{rgb:'1A1916'}},alignment:{horizontal:'center',vertical:'center',wrapText:true}};
+  const dayStyle={font:{bold:true},alignment:{horizontal:'center',vertical:'center'}};
+
+  const wsData=[];
+  // 타이틀 행
+  wsData.push(['No.','항목','수','목','금','토','일','비고']);
+  // 주간 정보
+  SECTIONS.forEach(sec=>{
+    sec.items.forEach(item=>{
+      wsData.push([
+        item.no,
+        item.text,
+        ...state[item.no].map(v=>v?SYM[v]:''),
+        notes[item.no]||''
+      ]);
+    });
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+  // 열 너비 설정
+  ws['!cols']=[
+    {wch:5},   // No
+    {wch:55},  // 항목
+    {wch:6},{wch:6},{wch:6},{wch:6},{wch:6}, // 요일
+    {wch:20},  // 비고
+  ];
+
+  // 행 높이
+  ws['!rows']=[{hpt:20}];
+  for(let i=1;i<wsData.length;i++) ws['!rows'].push({hpt:32});
+
+  // 섹션별 색상 구분을 위한 병합 없이 깔끔하게
+  XLSX.utils.book_append_sheet(wb, ws, '부담임 체크리스트');
+
+  // 상단 정보 시트
+  const infoData=[
+    ['별관 부담임 체크리스트'],
+    [weekText],
+    ['O: 진행 완료   △: 진행 미흡   X: 진행 누락   —: 해당 없음'],
+    ['△, X의 경우 비고란에 사유 직접 작성 필요'],
+  ];
+  const wsInfo=XLSX.utils.aoa_to_sheet(infoData);
+  wsInfo['!cols']=[{wch:60}];
+  XLSX.utils.book_append_sheet(wb, wsInfo, '안내');
+
+  const {wed}=getWedSun(weekOffset);
+  const dateStr=`${wed.getFullYear()}${String(wed.getMonth()+1).padStart(2,'0')}${String(wed.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `부담임체크리스트_${dateStr}.xlsx`);
+}
+
+document.addEventListener('click',e=>{
+  if(openPicker&&!e.target.closest('.picker-wrap')&&!e.target.closest('.chk-btn')){
+    document.getElementById('pk-'+openPicker).classList.remove('open');
+    openPicker=null;
+  }
+});
+
+document.getElementById('weekLabel').textContent=getWeekLabel();
+render(); updateProgress();
+</script>
+</body>
+</html>
