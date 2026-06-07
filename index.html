@@ -160,6 +160,29 @@ let weekOffset=0;
 const TOTAL_CELLS=SECTIONS.reduce((a,s)=>a+s.items.length,0)*5;
 SECTIONS.forEach(s=>s.items.forEach(i=>{state[i.no]=[0,0,0,0,0];notes[i.no]=''}));
 
+function getWeekKey(offset){
+  const {wed}=getWedSun(offset);
+  return `checklist_${wed.getFullYear()}_${String(wed.getMonth()+1).padStart(2,'0')}_${String(wed.getDate()).padStart(2,'0')}`;
+}
+
+function saveToStorage(){
+  const key=getWeekKey(weekOffset);
+  localStorage.setItem(key, JSON.stringify({state, notes}));
+}
+
+function loadFromStorage(offset){
+  const key=getWeekKey(offset);
+  const saved=localStorage.getItem(key);
+  SECTIONS.forEach(s=>s.items.forEach(i=>{state[i.no]=[0,0,0,0,0];notes[i.no]=''}));
+  if(saved){
+    try{
+      const data=JSON.parse(saved);
+      if(data.state) Object.keys(data.state).forEach(k=>{if(state[k])state[k]=data.state[k];});
+      if(data.notes) Object.keys(data.notes).forEach(k=>{if(notes[k]!==undefined)notes[k]=data.notes[k];});
+    }catch(e){}
+  }
+}
+
 function getWedSun(offset){
   const now=new Date(), day=now.getDay();
   const wed=new Date(now);
@@ -176,8 +199,11 @@ function getWeekLabel(){
 }
 
 function changeWeek(dir){
+  saveToStorage();
   weekOffset+=dir;
+  loadFromStorage(weekOffset);
   document.getElementById('weekLabel').textContent=getWeekLabel();
+  openPicker=null; render(); updateProgress();
 }
 
 function togglePicker(no,di){
@@ -199,6 +225,7 @@ function pick(no,di,val){
   document.getElementById('pk-'+no+'-'+di).classList.remove('open');
   openPicker=null;
   updateProgress();
+  saveToStorage();
 }
 
 function updateProgress(){
@@ -221,7 +248,7 @@ function render(){
           ${DAYS.map((_,di)=>{const v=state[no][di];return`<div class="cell"><button class="chk-btn${v?' '+BCLS[v]:''}" id="b-${no}-${di}" onclick="togglePicker(${no},${di})">${v?DISP[v]:'·'}</button></div>`;}).join('')}
         </div>
         ${DAYS.map((_,di)=>`<div class="picker-wrap" id="pk-${no}-${di}"><div class="picker-label">${DAYS[di]}요일 선택</div><div class="picker-btns"><button class="pick-opt po" onclick="pick(${no},${di},1)">○</button><button class="pick-opt pt" onclick="pick(${no},${di},2)">△</button><button class="pick-opt pd" onclick="pick(${no},${di},3)">—</button><button class="pick-opt px" onclick="pick(${no},${di},4)">✕</button><button class="pick-opt pn" onclick="pick(${no},${di},0)">지우기</button></div></div>`).join('')}
-        <div class="note-row"><span class="note-label">비고</span><input class="note-input" placeholder="△, ✕ 사유 입력..." value="${notes[no]||''}" oninput="notes[${no}]=this.value"/></div>
+        <div class="note-row"><span class="note-label">비고</span><input class="note-input" placeholder="△, ✕ 사유 입력..." value="${notes[no]||''}" oninput="notes[${no}]=this.value;saveToStorage()"/></div>
       </div>`;
     });
   });
@@ -231,6 +258,7 @@ function render(){
 function resetAll(){
   if(!confirm('이번 주 체크 내용을 모두 초기화할까요?'))return;
   SECTIONS.forEach(s=>s.items.forEach(i=>{state[i.no]=[0,0,0,0,0];notes[i.no]=''}));
+  saveToStorage();
   openPicker=null; render(); updateProgress();
 }
 
@@ -297,6 +325,7 @@ document.addEventListener('click',e=>{
 });
 
 document.getElementById('weekLabel').textContent=getWeekLabel();
+loadFromStorage(weekOffset);
 render(); updateProgress();
 </script>
 </body>
